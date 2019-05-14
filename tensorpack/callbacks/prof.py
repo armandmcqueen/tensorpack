@@ -96,9 +96,14 @@ class GPUUtilizationTracker(Callback):
         self._evt.set()
         self._proc.terminate()
 
-    def worker(self, evt, rst_queue, stop_evt):
+    @staticmethod
+    def worker(evt, rst_queue, stop_evt, devices):
+        """
+        Args:
+            devices (list[int])
+        """
         with NVMLContext() as ctx:
-            devices = [ctx.device(i) for i in self._devices]
+            devices = [ctx.device(i) for i in devices]
             while True:
                 try:
                     evt.wait()  # start epoch
@@ -106,7 +111,7 @@ class GPUUtilizationTracker(Callback):
                     if stop_evt.is_set():   # or on exit
                         return
 
-                    stats = np.zeros((len(self._devices),), dtype='f4')
+                    stats = np.zeros((len(devices),), dtype='f4')
                     cnt = 0
                     while True:
                         time.sleep(1)
